@@ -1,17 +1,17 @@
 :root {
-  --bg-deep: #141210;
-  --bg-card: #1e1b18;
-  --bg-card-hover: #252220;
-  --bg-surface: #2a2622;
-  --bg-input: #141210;
-  --copper: #c8842a;
-  --copper-light: #e6a040;
-  --copper-glow: rgba(200, 132, 42, 0.15);
-  --cream: #f0e6d3;
-  --cream-muted: #b8a08e;
-  --text: #d4cdc4;
-  --text-muted: #7a7268;
-  --text-dim: #4a4540;
+  --bg-deep: #0f1318;
+  --bg-card: #181e26;
+  --bg-card-hover: #1e2630;
+  --bg-surface: #222a36;
+  --bg-input: #0f1318;
+  --accent: #3a6fa8;
+  --accent-light: #5a9ad6;
+  --accent-glow: rgba(58, 111, 168, 0.15);
+  --cream: #e4e9f0;
+  --cream-muted: #8a94a4;
+  --text: #c8ced8;
+  --text-muted: #6a7484;
+  --text-dim: #3e4858;
   --green: #4a7a3a;
   --green-light: #8aba6a;
   --orange: #c06020;
@@ -56,8 +56,8 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 2rem;
-  background: linear-gradient(180deg, #1e1b18 0%, var(--bg-deep) 100%);
-  border-bottom: 1px solid rgba(200, 132, 42, 0.2);
+  background: linear-gradient(180deg, #181e26 0%, var(--bg-deep) 100%);
+  border-bottom: 1px solid rgba(58, 111, 168, 0.25);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -70,16 +70,11 @@ header {
   gap: 0.875rem;
 }
 
-.brand-icon {
-  width: 44px;
-  height: 44px;
-  color: var(--copper);
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   flex-shrink: 0;
-}
-
-.brand-icon svg {
-  width: 100%;
-  height: 100%;
 }
 
 .brand h1 {
@@ -96,7 +91,7 @@ header {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: var(--copper);
+  color: var(--accent);
 }
 
 .header-actions {
@@ -128,8 +123,8 @@ header {
 }
 
 .view-btn.active {
-  background: rgba(200, 132, 42, 0.15);
-  color: var(--copper);
+  background: rgba(58, 111, 168, 0.2);
+  color: var(--accent);
 }
 
 .view-btn:hover:not(.active) {
@@ -147,8 +142,8 @@ header {
   align-items: center;
   gap: 0.5rem;
   background: transparent;
-  color: var(--copper);
-  border: 1px solid rgba(200, 132, 42, 0.3);
+  color: var(--accent);
+  border: 1px solid rgba(58, 111, 168, 0.35);
   padding: 0.5rem 1.1rem;
   border-radius: var(--radius);
   cursor: pointer;
@@ -161,8 +156,8 @@ header {
 }
 
 #sync-btn:hover {
-  background: var(--copper-glow);
-  border-color: var(--copper);
+  background: var(--accent-glow);
+  border-color: var(--accent);
 }
 
 #sync-btn.syncing {
@@ -205,8 +200,8 @@ header {
 
 .keg-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(200, 132, 42, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(200, 132, 42, 0.1);
+  border-color: rgba(58, 111, 168, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(58, 111, 168, 0.15);
 }
 
 .keg-card-body {
@@ -257,7 +252,7 @@ header {
 .keg-batch-name {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--copper-light);
+  color: var(--accent-light);
   margin-bottom: 0.2rem;
   white-space: nowrap;
   overflow: hidden;
@@ -361,7 +356,7 @@ header {
 
 .modal {
   background: var(--bg-card);
-  border: 1px solid rgba(200, 132, 42, 0.15);
+  border: 1px solid rgba(58, 111, 168, 0.2);
   border-radius: 12px;
   padding: 0;
   width: 90%;
@@ -411,8 +406,8 @@ header {
 .batch-info-panel {
   margin: 0 1.5rem;
   padding: 0.75rem 1rem;
-  background: var(--copper-glow);
-  border-left: 3px solid var(--copper);
+  background: var(--accent-glow);
+  border-left: 3px solid var(--accent);
   border-radius: 0 var(--radius) var(--radius) 0;
   margin-top: 1rem;
 }
@@ -426,7 +421,7 @@ header {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--copper);
+  color: var(--accent);
   margin-bottom: 0.3rem;
 }
 
@@ -481,7 +476,7 @@ header {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: rgba(200, 132, 42, 0.4);
+  border-color: rgba(58, 111, 168, 0.5);
 }
 
 .form-group textarea {
@@ -520,12 +515,12 @@ header {
 }
 
 .btn-primary {
-  background: var(--copper);
-  color: #1a1a1a;
+  background: var(--accent);
+  color: #fff;
 }
 
 .btn-primary:hover {
-  background: var(--copper-light);
+  background: var(--accent-light);
 }
 
 /* ── Board View ─────────────────────────────────────── */
@@ -593,7 +588,7 @@ header {
 }
 
 .board-column-body.drag-over {
-  background: var(--copper-glow);
+  background: var(--accent-glow);
   border-radius: 0 0 var(--radius) var(--radius);
 }
 
@@ -616,7 +611,7 @@ header {
 }
 
 .board-card:hover {
-  border-color: rgba(200, 132, 42, 0.2);
+  border-color: rgba(58, 111, 168, 0.25);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -742,10 +737,10 @@ header {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(200, 132, 42, 0.2);
+  background: rgba(58, 111, 168, 0.25);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 132, 42, 0.4);
+  background: rgba(58, 111, 168, 0.5);
 }
