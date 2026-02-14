@@ -245,10 +245,10 @@ header {
 }
 
 .keg-number {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.2rem;
   color: var(--cream);
-  font-weight: 400;
+  font-weight: 600;
 }
 
 .keg-status-badge {
