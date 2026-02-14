@@ -1,0 +1,16 @@
+services:
+  keg-tracker:
+    image: ghcr.io/bamcdowal/keg-tracker:latest
+    container_name: keg-tracker
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - keg-data:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/kegs.db
+      - BREWFATHER_USER_ID=${BREWFATHER_USER_ID}
+      - BREWFATHER_API_KEY=${BREWFATHER_API_KEY}
+
+volumes:
+  keg-data:

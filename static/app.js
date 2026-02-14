@@ -82,7 +82,8 @@ function buildCardContent(keg, { showLocation = true } = {}) {
     `;
 
     if (keg.batch.bottling_date) {
-      bodyContent += `<div class="keg-detail"><span class="detail-icon">&#9641;</span> Bottled ${esc(keg.batch.bottling_date)}</div>`;
+      const days = Math.floor((Date.now() - new Date(keg.batch.bottling_date).getTime()) / 86400000);
+      bodyContent += `<div class="keg-detail"><span class="detail-icon">&#9641;</span> Bottled ${esc(keg.batch.bottling_date)} (${days}d)</div>`;
     }
     if (showLocation && keg.location) {
       bodyContent += `<div class="keg-detail"><span class="detail-icon">&#9673;</span> ${esc(keg.location)}</div>`;
