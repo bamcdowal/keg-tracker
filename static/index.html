@@ -28,6 +28,9 @@
         <button class="view-btn" data-view="board" title="Board view">
           <svg viewBox="0 0 18 18" fill="currentColor" width="16" height="16"><rect x="1" y="1" width="4.5" height="16" rx="1.5"/><rect x="6.75" y="1" width="4.5" height="11" rx="1.5"/><rect x="12.5" y="1" width="4.5" height="14" rx="1.5"/></svg>
         </button>
+        <button class="view-btn" data-view="stats" title="Usage stats">
+          <svg viewBox="0 0 18 18" fill="currentColor" width="16" height="16"><rect x="1" y="10" width="4" height="7" rx="1"/><rect x="7" y="6" width="4" height="11" rx="1"/><rect x="13" y="2" width="4" height="15" rx="1"/></svg>
+        </button>
       </div>
       <button id="sync-btn">
         <svg class="sync-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
@@ -41,6 +44,7 @@
 
   <main id="keg-grid"></main>
   <main id="keg-board" class="hidden"></main>
+  <main id="keg-stats" class="hidden"></main>
 
   <!-- Edit Modal -->
   <div id="modal-overlay" class="modal-overlay hidden">

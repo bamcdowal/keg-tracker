@@ -49,3 +49,18 @@ class Keg(Base):
     notes: Mapped[str] = mapped_column(String, default="")
 
     batch: Mapped[Batch | None] = relationship(back_populates="kegs")
+
+
+class KegEvent(Base):
+    __tablename__ = "keg_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    keg_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String, nullable=False)
+    person: Mapped[str] = mapped_column(String, default="")
+    batch_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    batch_name: Mapped[str] = mapped_column(String, default="")
+    style: Mapped[str] = mapped_column(String, default="")
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )

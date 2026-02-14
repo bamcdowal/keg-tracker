@@ -1,5 +1,6 @@
 const grid = document.getElementById("keg-grid");
 const board = document.getElementById("keg-board");
+const statsEl = document.getElementById("keg-stats");
 const syncBtn = document.getElementById("sync-btn");
 const overlay = document.getElementById("modal-overlay");
 const form = document.getElementById("keg-form");
@@ -36,8 +37,10 @@ async function loadBatches() {
 function render() {
   if (currentView === "grid") {
     renderGrid();
-  } else {
+  } else if (currentView === "board") {
     renderBoard();
+  } else if (currentView === "stats") {
+    renderStats();
   }
 }
 
@@ -52,13 +55,14 @@ document.querySelectorAll(".view-btn").forEach((btn) => {
     document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
 
-    if (view === "grid") {
-      grid.classList.remove("hidden");
-      board.classList.add("hidden");
-    } else {
-      grid.classList.add("hidden");
-      board.classList.remove("hidden");
-    }
+    grid.classList.add("hidden");
+    board.classList.add("hidden");
+    statsEl.classList.add("hidden");
+
+    if (view === "grid") grid.classList.remove("hidden");
+    else if (view === "board") board.classList.remove("hidden");
+    else if (view === "stats") statsEl.classList.remove("hidden");
+
     render();
   });
 });
@@ -357,6 +361,183 @@ syncBtn.addEventListener("click", async () => {
     syncBtn.classList.remove("syncing");
   }, 2000);
 });
+
+// ── Stats View ──────────────────────────────────────────
+
+async function renderStats() {
+  statsEl.innerHTML = `<div class="stats-loading">Loading stats&hellip;</div>`;
+  try {
+    const data = await api("GET", "/api/stats");
+    statsEl.innerHTML = buildStatsHTML(data);
+  } catch (err) {
+    statsEl.innerHTML = `<div class="stats-loading">Failed to load stats</div>`;
+    console.error(err);
+  }
+}
+
+function buildStatsHTML(data) {
+  const { people, overall } = data;
+
+  // Overall summary cards
+  let html = `<div class="stats-container">`;
+
+  html += `
+    <div class="stats-section">
+      <h2 class="stats-section-title">Brewery Overview</h2>
+      <div class="stats-summary-grid">
+        <div class="stat-card">
+          <div class="stat-value">${overall.total_kegs_consumed}</div>
+          <div class="stat-label">Kegs Consumed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${overall.total_litres}<span class="stat-unit">L</span></div>
+          <div class="stat-label">Total Litres</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${overall.total_filled}</div>
+          <div class="stat-label">Kegs Filled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${overall.total_returned}</div>
+          <div class="stat-label">Kegs Returned</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Popular styles
+  if (overall.popular_styles.length > 0) {
+    html += `
+      <div class="stats-section">
+        <h2 class="stats-section-title">Popular Styles</h2>
+        <div class="stats-bar-chart">
+    `;
+    const maxCount = overall.popular_styles[0].count;
+    for (const s of overall.popular_styles) {
+      const pct = Math.round((s.count / maxCount) * 100);
+      html += `
+        <div class="bar-row">
+          <span class="bar-label">${esc(s.name)}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: ${pct}%"></div>
+          </div>
+          <span class="bar-value">${s.count}</span>
+        </div>
+      `;
+    }
+    html += `</div></div>`;
+  }
+
+  // Monthly breakdown
+  if (overall.monthly.length > 0) {
+    html += `
+      <div class="stats-section">
+        <h2 class="stats-section-title">Monthly Consumption</h2>
+        <div class="stats-monthly-chart">
+    `;
+    const maxKegs = Math.max(...overall.monthly.map((m) => m.kegs));
+    for (const m of overall.monthly) {
+      const pct = Math.round((m.kegs / maxKegs) * 100);
+      const label = formatMonth(m.month);
+      html += `
+        <div class="monthly-bar-col">
+          <div class="monthly-bar-value">${m.kegs}</div>
+          <div class="monthly-bar-track">
+            <div class="monthly-bar-fill" style="height: ${pct}%"></div>
+          </div>
+          <div class="monthly-bar-label">${label}</div>
+        </div>
+      `;
+    }
+    html += `</div></div>`;
+  }
+
+  // Per-person cards
+  if (people.length > 0) {
+    html += `
+      <div class="stats-section">
+        <h2 class="stats-section-title">Per Person</h2>
+        <div class="stats-people-grid">
+    `;
+    for (const p of people) {
+      const topStyle = p.top_styles.length > 0 ? p.top_styles[0].name : "—";
+      const topBatch = p.top_batches.length > 0 ? p.top_batches[0].name : "—";
+
+      html += `
+        <div class="person-card">
+          <div class="person-header">
+            <div class="person-avatar">${p.name.charAt(0)}</div>
+            <div class="person-name">${esc(p.name)}</div>
+          </div>
+          <div class="person-stats-grid">
+            <div class="person-stat">
+              <div class="person-stat-value">${p.kegs_consumed}</div>
+              <div class="person-stat-label">Kegs</div>
+            </div>
+            <div class="person-stat">
+              <div class="person-stat-value">${p.litres_consumed}<span class="stat-unit">L</span></div>
+              <div class="person-stat-label">Litres</div>
+            </div>
+            <div class="person-stat">
+              <div class="person-stat-value">${p.litres_per_month}<span class="stat-unit">L</span></div>
+              <div class="person-stat-label">Per Month</div>
+            </div>
+            <div class="person-stat">
+              <div class="person-stat-value">${p.avg_days_per_keg}<span class="stat-unit">d</span></div>
+              <div class="person-stat-label">Avg per Keg</div>
+            </div>
+          </div>
+          <div class="person-details">
+            <div class="person-detail-row">
+              <span class="person-detail-label">Fav Style</span>
+              <span class="person-detail-value">${esc(topStyle)}</span>
+            </div>
+            <div class="person-detail-row">
+              <span class="person-detail-label">Top Batch</span>
+              <span class="person-detail-value">${esc(topBatch)}</span>
+            </div>
+          </div>
+      `;
+
+      // Recent history
+      if (p.history.length > 0) {
+        html += `<div class="person-history-label">Recent</div><div class="person-history">`;
+        for (const h of p.history.slice().reverse()) {
+          html += `
+            <div class="history-row">
+              <span class="history-batch">${esc(h.batch_name || "Unknown")}</span>
+              <span class="history-days">${h.days}d</span>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  // Empty state
+  if (data.event_count === 0) {
+    html += `
+      <div class="stats-empty">
+        <div class="stats-empty-icon">&#9641;</div>
+        <div class="stats-empty-msg">No usage data yet</div>
+        <div class="stats-empty-hint">Stats will appear here as kegs are assigned and returned.</div>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function formatMonth(ym) {
+  const [y, m] = ym.split("-");
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[parseInt(m) - 1]} '${y.slice(2)}`;
+}
 
 // ── Init ─────────────────────────────────────────────────────
 

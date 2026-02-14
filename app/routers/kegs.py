@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Keg, KegStatus
+from ..models import Batch, Keg, KegEvent, KegStatus
 
 router = APIRouter(prefix="/api/kegs", tags=["kegs"])
 
@@ -48,11 +48,39 @@ def list_kegs(db: Session = Depends(get_db)):
     return [_keg_to_dict(k) for k in kegs]
 
 
+PEOPLE = {"Michael", "Troy", "Brent"}
+
+
+def _log_event(db: Session, keg_id: int, event_type: str, person: str = "",
+               batch_id: str | None = None, batch_name: str = "", style: str = ""):
+    db.add(KegEvent(
+        keg_id=keg_id,
+        event_type=event_type,
+        person=person,
+        batch_id=batch_id,
+        batch_name=batch_name,
+        style=style,
+    ))
+
+
+def _get_batch_info(db: Session, batch_id: str | None) -> tuple[str, str]:
+    if not batch_id:
+        return "", ""
+    batch = db.get(Batch, batch_id)
+    if not batch:
+        return "", ""
+    return batch.recipe_name or batch.name, batch.style
+
+
 @router.put("/{keg_id}")
 def update_keg(keg_id: int, data: KegUpdate, db: Session = Depends(get_db)):
     keg = db.get(Keg, keg_id)
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
+
+    old_location = keg.location or ""
+    old_batch_id = keg.batch_id
+    old_status = keg.status
 
     if data.label is not None:
         keg.label = data.label
@@ -69,6 +97,25 @@ def update_keg(keg_id: int, data: KegUpdate, db: Session = Depends(get_db)):
     if data.notes is not None:
         keg.notes = data.notes
 
+    # Log events for meaningful changes
+    new_location = keg.location or ""
+    batch_name, style = _get_batch_info(db, keg.batch_id)
+
+    # Batch assigned
+    if keg.batch_id and keg.batch_id != old_batch_id:
+        _log_event(db, keg_id, "filled", batch_id=keg.batch_id,
+                   batch_name=batch_name, style=style)
+
+    # Assigned to a person
+    if new_location in PEOPLE and new_location != old_location:
+        _log_event(db, keg_id, "assigned", person=new_location,
+                   batch_id=keg.batch_id, batch_name=batch_name, style=style)
+
+    # Tapped
+    if keg.status == KegStatus.on_tap and old_status != KegStatus.on_tap:
+        _log_event(db, keg_id, "tapped", person=new_location,
+                   batch_id=keg.batch_id, batch_name=batch_name, style=style)
+
     db.commit()
     db.refresh(keg)
     return _keg_to_dict(keg)
@@ -79,6 +126,13 @@ def reset_keg(keg_id: int, db: Session = Depends(get_db)):
     keg = db.get(Keg, keg_id)
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
+
+    # Log the return event before clearing data
+    old_person = keg.location if keg.location in PEOPLE else ""
+    if old_person or keg.batch_id:
+        batch_name, style = _get_batch_info(db, keg.batch_id)
+        _log_event(db, keg_id, "returned", person=old_person,
+                   batch_id=keg.batch_id, batch_name=batch_name, style=style)
 
     keg.status = KegStatus.empty
     keg.batch_id = None
