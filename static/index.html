@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blue Dog Brewing - Keg Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="grain-overlay"></div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
+          <ellipse cx="15" cy="16" rx="3" ry="3.5" fill="currentColor"/>
+          <ellipse cx="25" cy="16" rx="3" ry="3.5" fill="currentColor"/>
+          <path d="M12 26 Q20 32 28 26" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="11" cy="12" rx="4" ry="2.5" fill="currentColor" transform="rotate(-30 11 12)" opacity="0.6"/>
+          <ellipse cx="29" cy="12" rx="4" ry="2.5" fill="currentColor" transform="rotate(30 29 12)" opacity="0.6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Blue Dog Brewing</h1>
+        <span class="brand-sub">Keg Tracker</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="grid" title="Grid view">
+          <svg viewBox="0 0 18 18" fill="currentColor" width="16" height="16"><rect x="1" y="1" width="7" height="7" rx="1.5"/><rect x="10" y="1" width="7" height="7" rx="1.5"/><rect x="1" y="10" width="7" height="7" rx="1.5"/><rect x="10" y="10" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button class="view-btn" data-view="board" title="Board view">
+          <svg viewBox="0 0 18 18" fill="currentColor" width="16" height="16"><rect x="1" y="1" width="4.5" height="16" rx="1.5"/><rect x="6.75" y="1" width="4.5" height="11" rx="1.5"/><rect x="12.5" y="1" width="4.5" height="14" rx="1.5"/></svg>
+        </button>
+      </div>
+      <button id="sync-btn">
+        <svg class="sync-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.5 3.5A8 8 0 0 1 18 10h-3l4 4 4-4h-3a10 10 0 0 0-5.5-8.5" transform="scale(0.8) translate(2,2)"/>
+          <path d="M5.5 16.5A8 8 0 0 1 2 10h3L1 6l-4 4h3a10 10 0 0 0 5.5 8.5" transform="scale(0.8) translate(4,2)"/>
+        </svg>
+        Sync from Brewfather
+      </button>
+    </div>
+  </header>
+
+  <main id="keg-grid"></main>
+  <main id="keg-board" class="hidden"></main>
+
+  <!-- Edit Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Edit Keg</h2>
+        <button type="button" id="modal-close" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div id="batch-info-panel" class="batch-info-panel hidden">
+        <div class="batch-info-label">Brewfather Notes</div>
+        <div id="batch-info-notes" class="batch-info-notes">—</div>
+      </div>
+
+      <form id="keg-form">
+        <input type="hidden" id="keg-id">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="keg-label">Label</label>
+            <input type="text" id="keg-label">
+          </div>
+          <div class="form-group">
+            <label for="keg-status">Status</label>
+            <select id="keg-status">
+              <option value="empty">Empty</option>
+              <option value="full">Full</option>
+              <option value="on_tap">On Tap</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="keg-batch">Batch</label>
+          <select id="keg-batch">
+            <option value="">-- None --</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="keg-location">Location</label>
+            <select id="keg-location">
+              <option value="">-- Select --</option>
+              <option value="Michael">Michael</option>
+              <option value="Troy">Troy</option>
+              <option value="Brent">Brent</option>
+              <option value="Conditioning Fridge">Conditioning Fridge</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="keg-date-purchased">Date Purchased</label>
+            <input type="date" id="keg-date-purchased">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="keg-notes">Notes</label>
+          <textarea id="keg-notes" rows="3"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

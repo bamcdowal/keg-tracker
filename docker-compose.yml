@@ -1,0 +1,16 @@
+services:
+  keg-tracker:
+    build: .
+    container_name: keg-tracker
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - keg-data:/data
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite:////data/kegs.db
+
+volumes:
+  keg-data:

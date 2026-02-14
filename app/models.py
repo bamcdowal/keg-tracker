@@ -1,0 +1,51 @@
+import enum
+from datetime import datetime
+
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .database import Base
+
+
+class KegStatus(str, enum.Enum):
+    empty = "empty"
+    full = "full"
+    on_tap = "on_tap"
+
+
+class Batch(Base):
+    __tablename__ = "batches"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    batch_no: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    name: Mapped[str] = mapped_column(String, default="")
+    style: Mapped[str] = mapped_column(String, default="")
+    abv: Mapped[float | None] = mapped_column(Float, nullable=True)
+    brew_date: Mapped[str] = mapped_column(String, default="")
+    bottling_date: Mapped[str] = mapped_column(String, default="")
+    status: Mapped[str] = mapped_column(String, default="")
+    recipe_name: Mapped[str] = mapped_column(String, default="")
+    batch_notes: Mapped[str] = mapped_column(String, default="")
+    last_synced: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )
+
+    kegs: Mapped[list["Keg"]] = relationship(back_populates="batch")
+
+
+class Keg(Base):
+    __tablename__ = "kegs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    label: Mapped[str] = mapped_column(String, default="")
+    status: Mapped[KegStatus] = mapped_column(
+        Enum(KegStatus), default=KegStatus.empty
+    )
+    location: Mapped[str] = mapped_column(String, default="")
+    batch_id: Mapped[str | None] = mapped_column(
+        ForeignKey("batches.id"), nullable=True
+    )
+    date_purchased: Mapped[str] = mapped_column(String, default="")
+    notes: Mapped[str] = mapped_column(String, default="")
+
+    batch: Mapped[Batch | None] = relationship(back_populates="kegs")
