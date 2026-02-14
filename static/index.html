@@ -32,6 +32,10 @@
           <svg viewBox="0 0 18 18" fill="currentColor" width="16" height="16"><rect x="1" y="10" width="4" height="7" rx="1"/><rect x="7" y="6" width="4" height="11" rx="1"/><rect x="13" y="2" width="4" height="15" rx="1"/></svg>
         </button>
       </div>
+      <button id="add-keg-btn" title="Add a new keg">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1z"/></svg>
+          Add Keg
+        </button>
       <button id="sync-btn">
         <svg class="sync-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14.5 3.5A8 8 0 0 1 18 10h-3l4 4 4-4h-3a10 10 0 0 0-5.5-8.5" transform="scale(0.8) translate(2,2)"/>
@@ -107,8 +111,11 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" id="modal-cancel" class="btn-secondary">Cancel</button>
-          <button type="submit" class="btn-primary">Save Changes</button>
+          <button type="button" id="modal-delete" class="btn-danger hidden">Delete Keg</button>
+          <div class="modal-actions-right">
+            <button type="button" id="modal-cancel" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Save Changes</button>
+          </div>
         </div>
       </form>
     </div>

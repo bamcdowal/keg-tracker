@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -46,6 +47,29 @@ def _keg_to_dict(keg: Keg) -> dict:
 def list_kegs(db: Session = Depends(get_db)):
     kegs = db.query(Keg).order_by(Keg.id).all()
     return [_keg_to_dict(k) for k in kegs]
+
+
+@router.post("")
+def create_keg(db: Session = Depends(get_db)):
+    max_id = db.query(func.max(Keg.id)).scalar() or 0
+    keg = Keg(label=f"Keg #{max_id + 1}", status=KegStatus.empty)
+    db.add(keg)
+    db.commit()
+    db.refresh(keg)
+    return _keg_to_dict(keg)
+
+
+@router.delete("/{keg_id}")
+def delete_keg(keg_id: int, db: Session = Depends(get_db)):
+    keg = db.get(Keg, keg_id)
+    if not keg:
+        raise HTTPException(status_code=404, detail="Keg not found")
+    if keg.batch_id:
+        raise HTTPException(status_code=400, detail="Cannot delete a keg with a batch assigned. Reset it first.")
+    _log_event(db, keg_id, "deleted")
+    db.delete(keg)
+    db.commit()
+    return {"ok": True}
 
 
 PEOPLE = {"Michael", "Troy", "Brent"}

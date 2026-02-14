@@ -1,6 +1,7 @@
 const grid = document.getElementById("keg-grid");
 const board = document.getElementById("keg-board");
 const statsEl = document.getElementById("keg-stats");
+const addKegBtn = document.getElementById("add-keg-btn");
 const syncBtn = document.getElementById("sync-btn");
 const overlay = document.getElementById("modal-overlay");
 const form = document.getElementById("keg-form");
@@ -8,6 +9,7 @@ const cancelBtn = document.getElementById("modal-cancel");
 const closeBtn = document.getElementById("modal-close");
 const batchInfoPanel = document.getElementById("batch-info-panel");
 const batchInfoNotes = document.getElementById("batch-info-notes");
+const deleteBtn = document.getElementById("modal-delete");
 
 let kegs = [];
 let batches = [];
@@ -21,7 +23,10 @@ async function api(method, path, body) {
   const opts = { method, headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(path, opts);
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 
@@ -292,6 +297,24 @@ function openModal(keg) {
     }
   };
 
+  // Show delete button only for empty kegs (no batch)
+  if (!keg.batch_id) {
+    deleteBtn.classList.remove("hidden");
+    deleteBtn.onclick = async () => {
+      if (!confirm(`Permanently delete ${keg.label}? This cannot be undone.`)) return;
+      try {
+        await api("DELETE", `/api/kegs/${keg.id}`);
+        closeModal();
+        await loadKegs();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+  } else {
+    deleteBtn.classList.add("hidden");
+    deleteBtn.onclick = null;
+  }
+
   overlay.classList.remove("hidden");
 }
 
@@ -360,6 +383,18 @@ syncBtn.addEventListener("click", async () => {
     `;
     syncBtn.classList.remove("syncing");
   }, 2000);
+});
+
+// ── Add Keg ─────────────────────────────────────────────
+
+addKegBtn.addEventListener("click", async () => {
+  try {
+    await api("POST", "/api/kegs");
+    await loadKegs();
+  } catch (err) {
+    alert("Failed to add keg: " + err.message);
+    console.error(err);
+  }
 });
 
 // ── Stats View ──────────────────────────────────────────

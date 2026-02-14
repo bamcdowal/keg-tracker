@@ -137,6 +137,34 @@ header {
   height: 16px;
 }
 
+#add-keg-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  color: var(--green-light);
+  border: 1px solid rgba(74, 122, 58, 0.35);
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.25s ease;
+}
+
+#add-keg-btn:hover {
+  background: rgba(74, 122, 58, 0.15);
+  border-color: var(--green-light);
+}
+
+#add-keg-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 #sync-btn {
   display: flex;
   align-items: center;
@@ -485,11 +513,17 @@ header {
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.75rem;
   margin-top: 0.5rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 0.75rem;
 }
 
 .modal-actions button {
@@ -521,6 +555,21 @@ header {
 
 .btn-primary:hover {
   background: var(--accent-light);
+}
+
+.btn-danger {
+  background: rgba(138, 48, 48, 0.2);
+  color: var(--red-light);
+  border: 1px solid rgba(138, 48, 48, 0.3);
+}
+
+.btn-danger:hover {
+  background: rgba(138, 48, 48, 0.35);
+  border-color: var(--red-light);
+}
+
+.btn-danger.hidden {
+  display: none;
 }
 
 /* ── Board View ─────────────────────────────────────── */
