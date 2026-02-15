@@ -71,6 +71,8 @@ async def upload_logo(file: UploadFile, db: Session = Depends(get_db)):
 
     logo_path = data_dir / f"custom_logo{ext}"
     contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large (max 2 MB)")
     logo_path.write_bytes(contents)
 
     settings = _get_settings(db)

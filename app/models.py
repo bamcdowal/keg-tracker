@@ -43,7 +43,7 @@ class Keg(Base):
     )
     location: Mapped[str] = mapped_column(String, default="")
     batch_id: Mapped[str | None] = mapped_column(
-        ForeignKey("batches.id"), nullable=True
+        ForeignKey("batches.id"), nullable=True, index=True
     )
     date_purchased: Mapped[str] = mapped_column(String, default="")
     notes: Mapped[str] = mapped_column(String, default="")
@@ -77,12 +77,12 @@ class KegEvent(Base):
     __tablename__ = "keg_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    keg_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    keg_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     event_type: Mapped[str] = mapped_column(String, nullable=False)
     person: Mapped[str] = mapped_column(String, default="")
     batch_id: Mapped[str | None] = mapped_column(String, nullable=True)
     batch_name: Mapped[str] = mapped_column(String, default="")
     style: Mapped[str] = mapped_column(String, default="")
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=datetime.utcnow, index=True
     )

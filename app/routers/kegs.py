@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
 from ..models import Batch, Keg, KegEvent, KegStatus, Person
@@ -45,7 +45,7 @@ def _keg_to_dict(keg: Keg) -> dict:
 
 @router.get("")
 def list_kegs(db: Session = Depends(get_db)):
-    kegs = db.query(Keg).order_by(Keg.id).all()
+    kegs = db.query(Keg).options(joinedload(Keg.batch)).order_by(Keg.id).all()
     return [_keg_to_dict(k) for k in kegs]
 
 
@@ -116,6 +116,8 @@ def update_keg(keg_id: int, data: KegUpdate, db: Session = Depends(get_db)):
     if data.clear_batch:
         keg.batch_id = None
     elif data.batch_id is not None:
+        if not db.get(Batch, data.batch_id):
+            raise HTTPException(status_code=404, detail="Batch not found")
         keg.batch_id = data.batch_id
     if data.date_purchased is not None:
         keg.date_purchased = data.date_purchased

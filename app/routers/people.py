@@ -30,6 +30,8 @@ def create_person(data: PersonCreate, db: Session = Depends(get_db)):
     existing = db.query(Person).filter(Person.name == name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Person already exists")
+    if db.query(Location).filter(Location.name == name).first():
+        raise HTTPException(status_code=400, detail="A location with this name already exists")
     person = Person(name=name)
     db.add(person)
     db.commit()
@@ -64,6 +66,8 @@ def create_location(data: LocationCreate, db: Session = Depends(get_db)):
     existing = db.query(Location).filter(Location.name == name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Location already exists")
+    if db.query(Person).filter(Person.name == name).first():
+        raise HTTPException(status_code=400, detail="A person with this name already exists")
     location = Location(name=name)
     db.add(location)
     db.commit()

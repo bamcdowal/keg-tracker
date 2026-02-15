@@ -33,6 +33,7 @@ let people = [];
 let locations = [];
 let currentView = "grid";
 let brewerySettings = { name: "Blue Dog Brewing", logo_url: "/logo.png" };
+let statsCache = { data: null, timestamp: 0 };
 
 function getLocations() {
   return ["At Brewery", ...locations.map((l) => l.name), ...people.map((p) => p.name)];
@@ -172,22 +173,32 @@ function renderGrid() {
         ${buildCardContent(keg)}
       </div>
       <div class="keg-card-footer">
-        <button class="keg-reset-btn" data-reset-id="${keg.id}">Reset Keg</button>
+        <button class="keg-reset-btn" data-keg-id="${keg.id}">Reset Keg</button>
       </div>
     `;
-
-    card.querySelector(".keg-card-body").addEventListener("click", () => openModal(keg));
-
-    card.querySelector(".keg-reset-btn").addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (!confirm(`Reset ${keg.label} to empty? This will clear the batch, location, and notes.`)) return;
-      await api("POST", `/api/kegs/${keg.id}/reset`);
-      await loadKegs();
-    });
 
     grid.appendChild(card);
   }
 }
+
+grid.addEventListener("click", async (e) => {
+  const resetBtn = e.target.closest(".keg-reset-btn");
+  if (resetBtn) {
+    const kegId = resetBtn.dataset.kegId;
+    const keg = kegs.find((k) => String(k.id) === kegId);
+    if (!keg) return;
+    if (!confirm(`Reset ${keg.label} to empty? This will clear the batch, location, and notes.`)) return;
+    invalidateStatsCache();
+    await api("POST", `/api/kegs/${keg.id}/reset`);
+    await loadKegs();
+    return;
+  }
+  const cardBody = e.target.closest("[data-keg-id]");
+  if (cardBody && cardBody.classList.contains("keg-card-body")) {
+    const keg = kegs.find((k) => String(k.id) === cardBody.dataset.kegId);
+    if (keg) openModal(keg);
+  }
+});
 
 // ── Board View ───────────────────────────────────────────────
 
@@ -245,24 +256,16 @@ function renderBoard() {
       card.draggable = true;
       card.dataset.kegId = keg.id;
 
-      const cardBody = document.createElement("div");
-      cardBody.className = "board-card-body";
-      cardBody.innerHTML = buildCardContent(keg, { showLocation: false });
+      card.innerHTML = `
+        <div class="board-card-body">
+          ${buildCardContent(keg, { showLocation: false })}
+        </div>
+        <div class="keg-card-footer">
+          <button class="keg-reset-btn" data-keg-id="${keg.id}">Reset Keg</button>
+        </div>
+      `;
 
-      const cardFooter = document.createElement("div");
-      cardFooter.className = "keg-card-footer";
-      cardFooter.innerHTML = `<button class="keg-reset-btn">Reset Keg</button>`;
-      cardFooter.querySelector(".keg-reset-btn").addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (!confirm(`Reset ${keg.label} to empty? This will clear the batch, location, and notes.`)) return;
-        await api("POST", `/api/kegs/${keg.id}/reset`);
-        await loadKegs();
-      });
-
-      card.appendChild(cardBody);
-      card.appendChild(cardFooter);
-
-      // Drag events
+      // Drag events (must stay per-card)
       card.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("text/plain", keg.id);
         e.dataTransfer.effectAllowed = "move";
@@ -274,12 +277,6 @@ function renderBoard() {
         document.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
       });
 
-      // Click card body to edit
-      cardBody.addEventListener("click", (e) => {
-        if (e.defaultPrevented) return;
-        openModal(keg);
-      });
-
       body.appendChild(card);
     }
 
@@ -287,6 +284,28 @@ function renderBoard() {
     board.appendChild(col);
   }
 }
+
+board.addEventListener("click", async (e) => {
+  const resetBtn = e.target.closest(".keg-reset-btn");
+  if (resetBtn) {
+    const kegId = resetBtn.dataset.kegId;
+    const keg = kegs.find((k) => String(k.id) === kegId);
+    if (!keg) return;
+    if (!confirm(`Reset ${keg.label} to empty? This will clear the batch, location, and notes.`)) return;
+    invalidateStatsCache();
+    await api("POST", `/api/kegs/${keg.id}/reset`);
+    await loadKegs();
+    return;
+  }
+  const cardBody = e.target.closest(".board-card-body");
+  if (cardBody) {
+    const card = cardBody.closest("[data-keg-id]");
+    if (card) {
+      const keg = kegs.find((k) => String(k.id) === card.dataset.kegId);
+      if (keg) openModal(keg);
+    }
+  }
+});
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -399,6 +418,7 @@ form.addEventListener("submit", async (e) => {
     payload.clear_batch = true;
   }
 
+  invalidateStatsCache();
   await api("PUT", `/api/kegs/${id}`, payload);
   closeModal();
   await loadKegs();
@@ -452,14 +472,24 @@ addKegBtn.addEventListener("click", async () => {
 // ── Stats View ──────────────────────────────────────────
 
 async function renderStats() {
+  const now = Date.now();
+  if (statsCache.data && now - statsCache.timestamp < 30000) {
+    statsEl.innerHTML = buildStatsHTML(statsCache.data);
+    return;
+  }
   statsEl.innerHTML = `<div class="stats-loading">Loading stats&hellip;</div>`;
   try {
     const data = await api("GET", "/api/stats");
+    statsCache = { data, timestamp: Date.now() };
     statsEl.innerHTML = buildStatsHTML(data);
   } catch (err) {
     statsEl.innerHTML = `<div class="stats-loading">Failed to load stats</div>`;
     console.error(err);
   }
+}
+
+function invalidateStatsCache() {
+  statsCache = { data: null, timestamp: 0 };
 }
 
 function buildStatsHTML(data) {
@@ -788,6 +818,14 @@ removeBreweryLogoBtn.addEventListener("click", async () => {
 // ── Init ─────────────────────────────────────────────────────
 
 (async () => {
-  await Promise.all([loadBatches(), fetchPeople(), fetchLocations(), fetchBrewerySettings()]);
-  await loadKegs();
+  try {
+    await Promise.all([loadBatches(), fetchPeople(), fetchLocations(), fetchBrewerySettings()]);
+    await loadKegs();
+  } catch (err) {
+    console.error("Init failed:", err);
+    const banner = document.createElement("div");
+    banner.style.cssText = "position:fixed;top:0;left:0;right:0;padding:1rem;background:#8a3030;color:#fff;text-align:center;z-index:9999;font-family:var(--font-body)";
+    banner.textContent = "Failed to load application data. Please refresh the page.";
+    document.body.prepend(banner);
+  }
 })();
