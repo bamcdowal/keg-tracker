@@ -4,7 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Batch, Keg, KegEvent, KegStatus
+from ..models import Batch, Keg, KegEvent, KegStatus, Person
 
 router = APIRouter(prefix="/api/kegs", tags=["kegs"])
 
@@ -72,7 +72,8 @@ def delete_keg(keg_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-PEOPLE = {"Michael", "Troy", "Brent"}
+def _get_people(db: Session) -> set[str]:
+    return {p.name for p in db.query(Person).all()}
 
 
 def _log_event(db: Session, keg_id: int, event_type: str, person: str = "",
@@ -131,7 +132,7 @@ def update_keg(keg_id: int, data: KegUpdate, db: Session = Depends(get_db)):
                    batch_name=batch_name, style=style)
 
     # Assigned to a person
-    if new_location in PEOPLE and new_location != old_location:
+    if new_location in _get_people(db) and new_location != old_location:
         _log_event(db, keg_id, "assigned", person=new_location,
                    batch_id=keg.batch_id, batch_name=batch_name, style=style)
 
@@ -152,7 +153,7 @@ def reset_keg(keg_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Keg not found")
 
     # Log the return event before clearing data
-    old_person = keg.location if keg.location in PEOPLE else ""
+    old_person = keg.location if keg.location in _get_people(db) else ""
     if old_person or keg.batch_id:
         batch_name, style = _get_batch_info(db, keg.batch_id)
         _log_event(db, keg_id, "returned", person=old_person,

@@ -3,6 +3,7 @@ const board = document.getElementById("keg-board");
 const statsEl = document.getElementById("keg-stats");
 const addKegBtn = document.getElementById("add-keg-btn");
 const syncBtn = document.getElementById("sync-btn");
+const settingsBtn = document.getElementById("settings-btn");
 const overlay = document.getElementById("modal-overlay");
 const form = document.getElementById("keg-form");
 const cancelBtn = document.getElementById("modal-cancel");
@@ -10,12 +11,24 @@ const closeBtn = document.getElementById("modal-close");
 const batchInfoPanel = document.getElementById("batch-info-panel");
 const batchInfoNotes = document.getElementById("batch-info-notes");
 const deleteBtn = document.getElementById("modal-delete");
+const settingsOverlay = document.getElementById("settings-overlay");
+const settingsCloseBtn = document.getElementById("settings-close");
+const peopleListEl = document.getElementById("people-list");
+const newPersonInput = document.getElementById("new-person-name");
+const addPersonBtn = document.getElementById("add-person-btn");
+const locationsListEl = document.getElementById("locations-list");
+const newLocationInput = document.getElementById("new-location-name");
+const addLocationBtn = document.getElementById("add-location-btn");
 
 let kegs = [];
 let batches = [];
+let people = [];
+let locations = [];
 let currentView = "grid";
 
-const LOCATIONS = ["At Brewery", "Conditioning Fridge", "Michael", "Troy", "Brent"];
+function getLocations() {
+  return ["At Brewery", ...locations.map((l) => l.name), ...people.map((p) => p.name)];
+}
 
 // ── API helpers ──────────────────────────────────────────────
 
@@ -37,6 +50,14 @@ async function loadKegs() {
 
 async function loadBatches() {
   batches = await api("GET", "/api/batches");
+}
+
+async function fetchPeople() {
+  people = await api("GET", "/api/people");
+}
+
+async function fetchLocations() {
+  locations = await api("GET", "/api/locations");
 }
 
 function render() {
@@ -158,7 +179,7 @@ function getKegColumn(keg) {
 function renderBoard() {
   board.innerHTML = "";
 
-  for (const loc of LOCATIONS) {
+  for (const loc of getLocations()) {
     const col = document.createElement("div");
     col.className = "board-column";
 
@@ -262,7 +283,18 @@ function openModal(keg) {
   document.getElementById("keg-id").value = keg.id;
   document.getElementById("keg-label").value = keg.label;
   document.getElementById("keg-status").value = keg.status;
-  document.getElementById("keg-location").value = keg.location || "";
+  // Populate location dropdown dynamically
+  const locationSelect = document.getElementById("keg-location");
+  locationSelect.innerHTML = `<option value="">-- Select --</option>`;
+  for (const loc of getLocations()) {
+    if (loc === "At Brewery") continue;
+    const opt = document.createElement("option");
+    opt.value = loc;
+    opt.textContent = loc;
+    if (keg.location === loc) opt.selected = true;
+    locationSelect.appendChild(opt);
+  }
+
   document.getElementById("keg-date-purchased").value = keg.date_purchased || "";
   document.getElementById("keg-notes").value = keg.notes || "";
 
@@ -574,9 +606,117 @@ function formatMonth(ym) {
   return `${months[parseInt(m) - 1]} '${y.slice(2)}`;
 }
 
+// ── Settings Modal ───────────────────────────────────────────
+
+function openSettings() {
+  renderLocationsList();
+  renderPeopleList();
+  settingsOverlay.classList.remove("hidden");
+}
+
+function closeSettings() {
+  settingsOverlay.classList.add("hidden");
+}
+
+function renderPeopleList() {
+  peopleListEl.innerHTML = "";
+  for (const p of people) {
+    const row = document.createElement("div");
+    row.className = "people-list-item";
+    row.innerHTML = `
+      <span class="people-list-name">${esc(p.name)}</span>
+      <button class="people-delete-btn" title="Remove ${esc(p.name)}">&times;</button>
+    `;
+    row.querySelector(".people-delete-btn").addEventListener("click", async () => {
+      if (!confirm(`Remove ${p.name}?`)) return;
+      try {
+        await api("DELETE", `/api/people/${p.id}`);
+        await fetchPeople();
+        renderPeopleList();
+        render();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    peopleListEl.appendChild(row);
+  }
+}
+
+function renderLocationsList() {
+  locationsListEl.innerHTML = "";
+  for (const loc of locations) {
+    const row = document.createElement("div");
+    row.className = "people-list-item";
+    row.innerHTML = `
+      <span class="people-list-name">${esc(loc.name)}</span>
+      <button class="people-delete-btn" title="Remove ${esc(loc.name)}">&times;</button>
+    `;
+    row.querySelector(".people-delete-btn").addEventListener("click", async () => {
+      if (!confirm(`Remove ${loc.name}?`)) return;
+      try {
+        await api("DELETE", `/api/locations/${loc.id}`);
+        await fetchLocations();
+        renderLocationsList();
+        render();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    locationsListEl.appendChild(row);
+  }
+}
+
+settingsBtn.addEventListener("click", openSettings);
+settingsCloseBtn.addEventListener("click", closeSettings);
+settingsOverlay.addEventListener("click", (e) => {
+  if (e.target === settingsOverlay) closeSettings();
+});
+
+addPersonBtn.addEventListener("click", async () => {
+  const name = newPersonInput.value.trim();
+  if (!name) return;
+  try {
+    await api("POST", "/api/people", { name });
+    newPersonInput.value = "";
+    await fetchPeople();
+    renderPeopleList();
+    render();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+newPersonInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addPersonBtn.click();
+  }
+});
+
+addLocationBtn.addEventListener("click", async () => {
+  const name = newLocationInput.value.trim();
+  if (!name) return;
+  try {
+    await api("POST", "/api/locations", { name });
+    newLocationInput.value = "";
+    await fetchLocations();
+    renderLocationsList();
+    render();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+newLocationInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addLocationBtn.click();
+  }
+});
+
 // ── Init ─────────────────────────────────────────────────────
 
 (async () => {
-  await loadBatches();
+  await Promise.all([loadBatches(), fetchPeople(), fetchLocations()]);
   await loadKegs();
 })();

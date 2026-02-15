@@ -51,6 +51,20 @@ class Keg(Base):
     batch: Mapped[Batch | None] = relationship(back_populates="kegs")
 
 
+class Person(Base):
+    __tablename__ = "people"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+
+class Location(Base):
+    __tablename__ = "locations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+
 class KegEvent(Base):
     __tablename__ = "keg_events"
 
