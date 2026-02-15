@@ -696,6 +696,46 @@ header {
   background: var(--accent-light);
 }
 
+/* ── Brewery Settings ──────────────────────────────── */
+
+.brewery-logo-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brewery-logo-preview {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.brewery-logo-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.brewery-upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.brewery-upload-label:hover {
+  background: var(--accent-light);
+}
+
 /* ── Board View ─────────────────────────────────────── */
 
 #keg-board {

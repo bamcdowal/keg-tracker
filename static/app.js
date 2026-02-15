@@ -19,12 +19,20 @@ const addPersonBtn = document.getElementById("add-person-btn");
 const locationsListEl = document.getElementById("locations-list");
 const newLocationInput = document.getElementById("new-location-name");
 const addLocationBtn = document.getElementById("add-location-btn");
+const brandLogo = document.getElementById("brand-logo");
+const brandName = document.getElementById("brand-name");
+const breweryNameInput = document.getElementById("brewery-name-input");
+const saveBreweryNameBtn = document.getElementById("save-brewery-name-btn");
+const breweryLogoPreview = document.getElementById("brewery-logo-preview");
+const breweryLogoUpload = document.getElementById("brewery-logo-upload");
+const removeBreweryLogoBtn = document.getElementById("remove-brewery-logo-btn");
 
 let kegs = [];
 let batches = [];
 let people = [];
 let locations = [];
 let currentView = "grid";
+let brewerySettings = { name: "Blue Dog Brewing", logo_url: "/logo.png" };
 
 function getLocations() {
   return ["At Brewery", ...locations.map((l) => l.name), ...people.map((p) => p.name)];
@@ -58,6 +66,18 @@ async function fetchPeople() {
 
 async function fetchLocations() {
   locations = await api("GET", "/api/locations");
+}
+
+async function fetchBrewerySettings() {
+  brewerySettings = await api("GET", "/api/settings/brewery");
+  applyBrewerySettings();
+}
+
+function applyBrewerySettings() {
+  brandName.textContent = brewerySettings.name;
+  brandLogo.src = brewerySettings.logo_url;
+  brandLogo.alt = brewerySettings.name;
+  document.title = `${brewerySettings.name} - Keg Tracker`;
 }
 
 function render() {
@@ -609,6 +629,8 @@ function formatMonth(ym) {
 // ── Settings Modal ───────────────────────────────────────────
 
 function openSettings() {
+  breweryNameInput.value = brewerySettings.name;
+  breweryLogoPreview.src = brewerySettings.logo_url;
   renderLocationsList();
   renderPeopleList();
   settingsOverlay.classList.remove("hidden");
@@ -714,9 +736,58 @@ newLocationInput.addEventListener("keydown", (e) => {
   }
 });
 
+// ── Brewery Settings ─────────────────────────────────────────
+
+saveBreweryNameBtn.addEventListener("click", async () => {
+  const name = breweryNameInput.value.trim();
+  if (!name) return;
+  try {
+    brewerySettings = await api("PUT", "/api/settings/brewery", { name });
+    applyBrewerySettings();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+breweryNameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    saveBreweryNameBtn.click();
+  }
+});
+
+breweryLogoUpload.addEventListener("change", async () => {
+  const file = breweryLogoUpload.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const res = await fetch("/api/settings/logo", { method: "POST", body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Upload failed");
+    }
+    await fetchBrewerySettings();
+    breweryLogoPreview.src = brewerySettings.logo_url + "?t=" + Date.now();
+  } catch (err) {
+    alert(err.message);
+  }
+  breweryLogoUpload.value = "";
+});
+
+removeBreweryLogoBtn.addEventListener("click", async () => {
+  try {
+    await api("DELETE", "/api/settings/logo");
+    await fetchBrewerySettings();
+    breweryLogoPreview.src = brewerySettings.logo_url;
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
 // ── Init ─────────────────────────────────────────────────────
 
 (async () => {
-  await Promise.all([loadBatches(), fetchPeople(), fetchLocations()]);
+  await Promise.all([loadBatches(), fetchPeople(), fetchLocations(), fetchBrewerySettings()]);
   await loadKegs();
 })();

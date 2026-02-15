@@ -4,8 +4,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from .database import Base, SessionLocal, engine
-from .models import Keg, KegStatus, Location, Person
-from .routers import batches, kegs, people, stats
+from .models import BrewerySettings, Keg, KegStatus, Location, Person
+from .routers import batches, kegs, people, settings, stats
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,6 +22,9 @@ if db.query(Person).count() == 0:
 if db.query(Location).count() == 0:
     db.add(Location(name="Conditioning Fridge"))
     db.commit()
+if db.query(BrewerySettings).count() == 0:
+    db.add(BrewerySettings(id=1, name="Blue Dog Brewing"))
+    db.commit()
 db.close()
 
 app = FastAPI(title="Keg Tracker")
@@ -37,6 +40,7 @@ app.include_router(batches.router)
 app.include_router(stats.router)
 app.include_router(people.router)
 app.include_router(people.locations_router)
+app.include_router(settings.router)
 
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
