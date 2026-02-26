@@ -23,6 +23,8 @@ const brandLogo = document.getElementById("brand-logo");
 const brandName = document.getElementById("brand-name");
 const breweryNameInput = document.getElementById("brewery-name-input");
 const saveBreweryNameBtn = document.getElementById("save-brewery-name-btn");
+const kegVolumeInput = document.getElementById("keg-volume-input");
+const saveKegVolumeBtn = document.getElementById("save-keg-volume-btn");
 const breweryLogoPreview = document.getElementById("brewery-logo-preview");
 const breweryLogoUpload = document.getElementById("brewery-logo-upload");
 const removeBreweryLogoBtn = document.getElementById("remove-brewery-logo-btn");
@@ -72,6 +74,16 @@ async function fetchLocations() {
 async function fetchBrewerySettings() {
   brewerySettings = await api("GET", "/api/settings/brewery");
   applyBrewerySettings();
+}
+
+async function fetchVersion() {
+  try {
+    const { version } = await api("GET", "/api/version");
+    const el = document.getElementById("app-version");
+    if (el) el.textContent = `v${version}`;
+  } catch {
+    // non-critical, ignore
+  }
 }
 
 function applyBrewerySettings() {
@@ -246,6 +258,7 @@ function renderBoard() {
       const kegId = e.dataTransfer.getData("text/plain");
       const newLocation = loc === "At Brewery" ? "" : loc;
 
+      invalidateStatsCache();
       await api("PUT", `/api/kegs/${kegId}`, { location: newLocation });
       await loadKegs();
     });
@@ -660,6 +673,7 @@ function formatMonth(ym) {
 
 function openSettings() {
   breweryNameInput.value = brewerySettings.name;
+  kegVolumeInput.value = brewerySettings.keg_volume_litres || 19;
   breweryLogoPreview.src = brewerySettings.logo_url;
   renderLocationsList();
   renderPeopleList();
@@ -786,6 +800,24 @@ breweryNameInput.addEventListener("keydown", (e) => {
   }
 });
 
+saveKegVolumeBtn.addEventListener("click", async () => {
+  const vol = parseFloat(kegVolumeInput.value);
+  if (!vol || vol <= 0) return;
+  try {
+    brewerySettings = await api("PUT", "/api/settings/brewery", { keg_volume_litres: vol });
+    invalidateStatsCache();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+kegVolumeInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    saveKegVolumeBtn.click();
+  }
+});
+
 breweryLogoUpload.addEventListener("change", async () => {
   const file = breweryLogoUpload.files[0];
   if (!file) return;
@@ -819,7 +851,7 @@ removeBreweryLogoBtn.addEventListener("click", async () => {
 
 (async () => {
   try {
-    await Promise.all([loadBatches(), fetchPeople(), fetchLocations(), fetchBrewerySettings()]);
+    await Promise.all([loadBatches(), fetchPeople(), fetchLocations(), fetchBrewerySettings(), fetchVersion()]);
     await loadKegs();
   } catch (err) {
     console.error("Init failed:", err);

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
@@ -51,9 +50,10 @@ def list_kegs(db: Session = Depends(get_db)):
 
 @router.post("")
 def create_keg(db: Session = Depends(get_db)):
-    max_id = db.query(func.max(Keg.id)).scalar() or 0
-    keg = Keg(label=f"Keg #{max_id + 1}", status=KegStatus.empty)
+    keg = Keg(label="", status=KegStatus.empty)
     db.add(keg)
+    db.flush()  # populates keg.id via autoincrement without committing
+    keg.label = f"Keg #{keg.id}"
     db.commit()
     db.refresh(keg)
     return _keg_to_dict(keg)

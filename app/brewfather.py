@@ -66,45 +66,51 @@ async def fetch_batches() -> list[dict]:
     return batches
 
 
+def _parse_date(ms) -> str:
+    if not ms:
+        return ""
+    try:
+        return datetime.fromtimestamp(ms / 1000).strftime("%Y-%m-%d")
+    except (ValueError, TypeError, OSError):
+        return str(ms)
+
 
 def sync_batches_to_db(db: Session, raw_batches: list[dict]) -> int:
     """Upsert Brewfather batches into the local database. Returns count synced."""
     count = 0
     for b in raw_batches:
         batch_id = b.get("_id", "")
-        existing = db.get(Batch, batch_id)
+        if not batch_id:
+            continue
+        try:
+            with db.begin_nested():  # savepoint: isolates each batch
+                existing = db.get(Batch, batch_id)
 
-        def _parse_date(ms):
-            if not ms:
-                return ""
-            try:
-                return datetime.fromtimestamp(ms / 1000).strftime("%Y-%m-%d")
-            except (ValueError, TypeError, OSError):
-                return str(ms)
+                values = {
+                    "batch_no": b.get("batchNo"),
+                    "name": b.get("name", ""),
+                    "style": b.get("recipe", {}).get("style", {}).get("name", "")
+                    if isinstance(b.get("recipe"), dict)
+                    else "",
+                    "abv": b.get("measuredAbv"),
+                    "brew_date": _parse_date(b.get("brewDate")),
+                    "bottling_date": _parse_date(b.get("bottlingDate")),
+                    "status": b.get("status", ""),
+                    "recipe_name": b.get("recipe", {}).get("name", "")
+                    if isinstance(b.get("recipe"), dict)
+                    else "",
+                    "batch_notes": b.get("note", "") or "",
+                    "last_synced": datetime.utcnow(),
+                }
 
-        values = {
-            "batch_no": b.get("batchNo"),
-            "name": b.get("name", ""),
-            "style": b.get("recipe", {}).get("style", {}).get("name", "")
-            if isinstance(b.get("recipe"), dict)
-            else "",
-            "abv": b.get("measuredAbv"),
-            "brew_date": _parse_date(b.get("brewDate")),
-            "bottling_date": _parse_date(b.get("bottlingDate")),
-            "status": b.get("status", ""),
-            "recipe_name": b.get("recipe", {}).get("name", "")
-            if isinstance(b.get("recipe"), dict)
-            else "",
-            "batch_notes": b.get("note", "") or "",
-            "last_synced": datetime.utcnow(),
-        }
-
-        if existing:
-            for k, v in values.items():
-                setattr(existing, k, v)
-        else:
-            db.add(Batch(id=batch_id, **values))
-        count += 1
+                if existing:
+                    for k, v in values.items():
+                        setattr(existing, k, v)
+                else:
+                    db.add(Batch(id=batch_id, **values))
+            count += 1
+        except Exception as e:
+            print(f"[SYNC] Warning: skipped batch {batch_id!r}: {e}")
 
     db.commit()
     return count
