@@ -71,6 +71,7 @@ class BrewerySettings(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, default="Blue Dog Brewing")
     has_custom_logo: Mapped[bool] = mapped_column(Boolean, default=False)
+    keg_volume_litres: Mapped[float] = mapped_column(Float, default=19.0)
 
 
 class KegEvent(Base):

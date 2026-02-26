@@ -31,27 +31,40 @@ def _get_settings(db: Session) -> BrewerySettings:
     return settings
 
 
-class BreweryNameUpdate(BaseModel):
-    name: str
+def _settings_response(settings: BrewerySettings) -> dict:
+    logo_url = "/api/settings/logo" if settings.has_custom_logo else "/logo.png"
+    return {
+        "name": settings.name,
+        "logo_url": logo_url,
+        "keg_volume_litres": settings.keg_volume_litres,
+    }
+
+
+class BreweryUpdate(BaseModel):
+    name: str | None = None
+    keg_volume_litres: float | None = None
 
 
 @router.get("/brewery")
 def get_brewery(db: Session = Depends(get_db)):
     settings = _get_settings(db)
-    logo_url = "/api/settings/logo" if settings.has_custom_logo else "/logo.png"
-    return {"name": settings.name, "logo_url": logo_url}
+    return _settings_response(settings)
 
 
 @router.put("/brewery")
-def update_brewery(data: BreweryNameUpdate, db: Session = Depends(get_db)):
-    name = data.name.strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="Name cannot be empty")
+def update_brewery(data: BreweryUpdate, db: Session = Depends(get_db)):
     settings = _get_settings(db)
-    settings.name = name
+    if data.name is not None:
+        name = data.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        settings.name = name
+    if data.keg_volume_litres is not None:
+        if data.keg_volume_litres <= 0:
+            raise HTTPException(status_code=400, detail="Keg volume must be greater than zero")
+        settings.keg_volume_litres = data.keg_volume_litres
     db.commit()
-    logo_url = "/api/settings/logo" if settings.has_custom_logo else "/logo.png"
-    return {"name": settings.name, "logo_url": logo_url}
+    return _settings_response(settings)
 
 
 @router.post("/logo")
@@ -64,20 +77,26 @@ async def upload_logo(file: UploadFile, db: Session = Depends(get_db)):
         ext = ".png"
 
     data_dir = _get_data_dir()
-
-    # Remove any existing custom logo files
-    for existing in data_dir.glob("custom_logo.*"):
-        existing.unlink()
-
-    logo_path = data_dir / f"custom_logo{ext}"
     contents = await file.read()
     if len(contents) > 2 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 2 MB)")
-    logo_path.write_bytes(contents)
+
+    # Write to a temp file first so the original is untouched if DB commit fails
+    tmp_path = data_dir / f".custom_logo_upload{ext}"
+    tmp_path.write_bytes(contents)
 
     settings = _get_settings(db)
     settings.has_custom_logo = True
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="Failed to save logo settings")
+
+    # DB committed: remove old logo files and promote the temp file
+    for existing in data_dir.glob("custom_logo.*"):
+        existing.unlink(missing_ok=True)
+    tmp_path.rename(data_dir / f"custom_logo{ext}")
 
     return {"logo_url": "/api/settings/logo"}
 

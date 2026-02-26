@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 from .database import Base, SessionLocal, engine
 from .models import BrewerySettings, Keg, KegStatus, Location, Person
@@ -9,30 +11,48 @@ from .routers import batches, kegs, people, settings, stats
 
 Base.metadata.create_all(bind=engine)
 
-# Seed the 16 kegs if they don't exist yet
-db = SessionLocal()
-if db.query(Keg).count() == 0:
-    for i in range(1, 17):
-        db.add(Keg(id=i, label=f"Keg #{i}", status=KegStatus.empty))
-    db.commit()
-if db.query(Person).count() == 0:
-    for name in ["Michael", "Troy", "Brent"]:
-        db.add(Person(name=name))
-    db.commit()
-if db.query(Location).count() == 0:
-    db.add(Location(name="Conditioning Fridge"))
-    db.commit()
-if db.query(BrewerySettings).count() == 0:
-    db.add(BrewerySettings(id=1, name="Blue Dog Brewing"))
-    db.commit()
-db.close()
+# Safe migration: add keg_volume_litres column if it doesn't exist yet
+with engine.connect() as _conn:
+    try:
+        _conn.execute(text("ALTER TABLE brewery_settings ADD COLUMN keg_volume_litres REAL DEFAULT 19.0"))
+        _conn.commit()
+    except Exception:
+        pass  # Column already exists
+
+# Seed initial data
+with SessionLocal() as db:
+    if db.query(Keg).count() == 0:
+        for i in range(1, 17):
+            db.add(Keg(id=i, label=f"Keg #{i}", status=KegStatus.empty))
+        db.commit()
+    if db.query(Person).count() == 0:
+        for name in ["Michael", "Troy", "Brent"]:
+            db.add(Person(name=name))
+        db.commit()
+    if db.query(Location).count() == 0:
+        db.add(Location(name="Conditioning Fridge"))
+        db.commit()
+    if db.query(BrewerySettings).count() == 0:
+        db.add(BrewerySettings(id=1, name="Blue Dog Brewing"))
+        db.commit()
 
 app = FastAPI(title="Keg Tracker")
+
+_VERSION_FILE = Path(__file__).parent.parent / "VERSION"
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/version")
+def get_version():
+    try:
+        version = _VERSION_FILE.read_text().strip()
+    except FileNotFoundError:
+        version = "unknown"
+    return {"version": version}
 
 
 app.include_router(kegs.router)

@@ -1,19 +1,25 @@
 from collections import defaultdict
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import KegEvent
+from ..models import BrewerySettings, KegEvent
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
-KEG_LITRES = 19
+
+def _get_keg_litres(db: Session) -> float:
+    settings = db.get(BrewerySettings, 1)
+    if settings and settings.keg_volume_litres:
+        return settings.keg_volume_litres
+    return 19.0
 
 
 @router.get("")
 def get_stats(db: Session = Depends(get_db)):
+    keg_litres = _get_keg_litres(db)
     events = db.query(KegEvent).order_by(KegEvent.timestamp).all()
 
     # Build assignment timeline: track assigned→returned pairs per person
@@ -43,16 +49,8 @@ def get_stats(db: Session = Depends(get_db)):
                     "assigned_at": assignment["assigned_at"].isoformat(),
                     "returned_at": ev.timestamp.isoformat(),
                 })
-            elif ev.person:
-                # No matching assignment, still record as a return
-                completed.append({
-                    "person": ev.person,
-                    "batch_name": ev.batch_name,
-                    "style": ev.style,
-                    "days": 0,
-                    "assigned_at": ev.timestamp.isoformat(),
-                    "returned_at": ev.timestamp.isoformat(),
-                })
+            # Orphaned returns (no matching assignment) are intentionally skipped
+            # to avoid inflating keg counts with phantom 0-day records
 
     # Per-person stats
     person_stats: dict[str, dict] = {}
@@ -71,7 +69,7 @@ def get_stats(db: Session = Depends(get_db)):
             }
         ps = person_stats[p]
         ps["kegs"] += 1
-        ps["litres"] += KEG_LITRES
+        ps["litres"] += keg_litres
         ps["total_days"] += c["days"]
         if c["style"]:
             ps["styles"][c["style"]] += 1
@@ -108,7 +106,7 @@ def get_stats(db: Session = Depends(get_db)):
 
     # Overall stats
     total_kegs = sum(p["kegs_consumed"] for p in people)
-    total_litres = total_kegs * KEG_LITRES
+    total_litres = round(total_kegs * keg_litres, 1)
 
     # All events counts
     filled_count = sum(1 for e in events if e.event_type == "filled")
@@ -144,8 +142,18 @@ def get_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/events")
-def get_events(db: Session = Depends(get_db)):
-    events = db.query(KegEvent).order_by(KegEvent.timestamp.desc()).limit(50).all()
+def get_events(
+    db: Session = Depends(get_db),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    events = (
+        db.query(KegEvent)
+        .order_by(KegEvent.timestamp.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
     return [
         {
             "id": e.id,
