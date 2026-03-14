@@ -659,6 +659,34 @@ function buildStatsHTML(data) {
     `;
   }
 
+  // Event log section
+  if (data.recent_events && data.recent_events.length > 0) {
+    html += `
+      <div class="stats-section">
+        <h2 class="stats-section-title">Recent Activity</h2>
+        <div class="event-log">
+    `;
+    for (const ev of data.recent_events) {
+      const date = new Date(ev.timestamp);
+      const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      const typeClass = `event-type-${ev.event_type}`;
+      const label = ev.event_type.charAt(0).toUpperCase() + ev.event_type.slice(1);
+      const person = ev.person ? ` &middot; ${esc(ev.person)}` : "";
+      const batch = ev.batch_name ? esc(ev.batch_name) : "";
+      const kegLabel = `Keg #${ev.keg_id}`;
+
+      html += `
+        <div class="event-row">
+          <span class="event-date">${dateStr} ${timeStr}</span>
+          <span class="event-badge ${typeClass}">${label}</span>
+          <span class="event-detail">${esc(kegLabel)}${person}${batch ? " &middot; " + batch : ""}</span>
+        </div>
+      `;
+    }
+    html += `</div></div>`;
+  }
+
   html += `</div>`;
   return html;
 }

@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -78,12 +78,17 @@ class KegEvent(Base):
     __tablename__ = "keg_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    keg_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    event_type: Mapped[str] = mapped_column(String, nullable=False)
-    person: Mapped[str] = mapped_column(String, default="")
+    keg_id: Mapped[int] = mapped_column(Integer, ForeignKey("kegs.id"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    person: Mapped[str] = mapped_column(String(200), default="")
     batch_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    batch_name: Mapped[str] = mapped_column(String, default="")
-    style: Mapped[str] = mapped_column(String, default="")
+    batch_name: Mapped[str] = mapped_column(String(200), default="")
+    style: Mapped[str] = mapped_column(String(200), default="")
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, index=True
+        DateTime, default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        Index("ix_keg_events_keg_id", "keg_id"),
+        Index("ix_keg_events_timestamp", "timestamp"),
     )

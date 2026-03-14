@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..brewfather import fetch_batches, sync_batches_to_db
@@ -9,8 +9,18 @@ router = APIRouter(prefix="/api/batches", tags=["batches"])
 
 
 @router.get("")
-def list_batches(db: Session = Depends(get_db)):
-    batches = db.query(Batch).order_by(Batch.brew_date.desc()).all()
+def list_batches(
+    db: Session = Depends(get_db),
+    limit: int = Query(default=200, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+):
+    batches = (
+        db.query(Batch)
+        .order_by(Batch.brew_date.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
     return [
         {
             "id": b.id,
@@ -35,5 +45,5 @@ async def sync_from_brewfather(db: Session = Depends(get_db)):
         raw = await fetch_batches()
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Brewfather API error: {e}")
-    count = sync_batches_to_db(db, raw)
-    return {"synced": count}
+    result = sync_batches_to_db(db, raw)
+    return {"synced": result["synced"], "failed": result["failed"]}

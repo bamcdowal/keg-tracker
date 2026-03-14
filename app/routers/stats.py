@@ -127,6 +127,19 @@ def get_stats(db: Session = Depends(get_db)):
     popular_styles = [{"name": s, "count": c} for s, c in
                       sorted(all_styles.items(), key=lambda x: -x[1])[:5]]
 
+    # Recent events for activity feed (last 20)
+    recent_events = [
+        {
+            "keg_id": e.keg_id,
+            "event_type": e.event_type,
+            "person": e.person,
+            "batch_name": e.batch_name,
+            "style": e.style,
+            "timestamp": e.timestamp.isoformat(),
+        }
+        for e in reversed(events[-20:])
+    ]
+
     return {
         "people": people,
         "overall": {
@@ -138,6 +151,7 @@ def get_stats(db: Session = Depends(get_db)):
             "popular_styles": popular_styles,
         },
         "event_count": len(events),
+        "recent_events": recent_events,
     }
 
 

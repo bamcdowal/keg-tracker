@@ -108,6 +108,8 @@ def update_keg(keg_id: int, data: KegUpdate, db: Session = Depends(get_db)):
     old_status = keg.status
 
     if data.label is not None:
+        if len(data.label) > 100:
+            raise HTTPException(status_code=400, detail="Label is too long (max 100 characters)")
         keg.label = data.label
     if data.status is not None:
         keg.status = data.status
@@ -122,6 +124,8 @@ def update_keg(keg_id: int, data: KegUpdate, db: Session = Depends(get_db)):
     if data.date_purchased is not None:
         keg.date_purchased = data.date_purchased
     if data.notes is not None:
+        if len(data.notes) > 2000:
+            raise HTTPException(status_code=400, detail="Notes are too long (max 2000 characters)")
         keg.notes = data.notes
 
     # Log events for meaningful changes

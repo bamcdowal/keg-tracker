@@ -1320,6 +1320,75 @@ header {
   margin-top: 1rem;
 }
 
+/* ── Event Log ──────────────────────────────────────── */
+
+.event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.event-date {
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 7rem;
+  font-size: 0.8rem;
+}
+
+.event-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  min-width: 4.5rem;
+  text-align: center;
+}
+
+.event-type-filled {
+  background: rgba(58, 111, 168, 0.2);
+  color: var(--accent-light);
+}
+
+.event-type-assigned {
+  background: rgba(74, 122, 58, 0.2);
+  color: var(--green-light);
+}
+
+.event-type-tapped {
+  background: rgba(192, 96, 32, 0.2);
+  color: var(--orange-light);
+}
+
+.event-type-returned {
+  background: rgba(138, 48, 48, 0.2);
+  color: var(--red-light);
+}
+
+.event-type-deleted {
+  background: rgba(62, 72, 88, 0.3);
+  color: var(--text-muted);
+}
+
+.event-detail {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Scrollbar ──────────────────────────────────────── */
 
 ::-webkit-scrollbar {
