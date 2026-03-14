@@ -1236,6 +1236,20 @@ header {
   .header-actions {
     width: 100%;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Hide button text labels on mobile, show icons only */
+  #add-keg-btn .btn-label,
+  #sync-btn .btn-label {
+    display: none;
+  }
+
+  #add-keg-btn,
+  #sync-btn {
+    padding: 0.5rem;
+    gap: 0;
   }
 
   .brand h1 {
@@ -1277,6 +1291,10 @@ header {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
   #keg-stats {
     padding: 1rem;
   }
@@ -1291,6 +1309,10 @@ header {
     gap: 0.3rem;
   }
 
+  .stats-people-grid {
+    grid-template-columns: 1fr;
+  }
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
@@ -1300,11 +1322,52 @@ header {
     width: 95%;
     max-height: 95vh;
   }
+
+  .settings-modal {
+    max-width: 100%;
+  }
+
+  /* Event log: stack rows vertically on mobile */
+  .event-row {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .event-date {
+    min-width: auto;
+    font-size: 0.72rem;
+  }
+
+  .event-badge {
+    font-size: 0.68rem;
+    min-width: auto;
+    padding: 0.1rem 0.4rem;
+  }
+
+  .event-detail {
+    width: 100%;
+    font-size: 0.78rem;
+  }
 }
 
 @media (max-width: 380px) {
   #keg-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-summary-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .stat-card {
+    padding: 0.8rem 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
   }
 }
 

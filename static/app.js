@@ -33,7 +33,7 @@ let kegs = [];
 let batches = [];
 let people = [];
 let locations = [];
-let currentView = "grid";
+let currentView = "board";
 let brewerySettings = { name: "Blue Dog Brewing", logo_url: "/logo.png" };
 let statsCache = { data: null, timestamp: 0 };
 
@@ -447,15 +447,15 @@ syncBtn.addEventListener("click", async () => {
       <path d="M14.5 3.5A8 8 0 0 1 18 10h-3l4 4 4-4h-3a10 10 0 0 0-5.5-8.5" transform="scale(0.8) translate(2,2)"/>
       <path d="M5.5 16.5A8 8 0 0 1 2 10h3L1 6l-4 4h3a10 10 0 0 0 5.5 8.5" transform="scale(0.8) translate(4,2)"/>
     </svg>
-    Syncing&hellip;
+    <span class="btn-label">Syncing&hellip;</span>
   `;
   try {
     const result = await api("POST", "/api/batches/sync");
-    syncBtn.textContent = `Synced ${result.synced} batches`;
+    syncBtn.innerHTML = `<span class="btn-label">Synced ${result.synced} batches</span>`;
     await loadBatches();
     await loadKegs();
   } catch (err) {
-    syncBtn.textContent = "Sync failed!";
+    syncBtn.innerHTML = `<span class="btn-label">Sync failed!</span>`;
     console.error(err);
   }
   setTimeout(() => {
@@ -464,7 +464,7 @@ syncBtn.addEventListener("click", async () => {
         <path d="M14.5 3.5A8 8 0 0 1 18 10h-3l4 4 4-4h-3a10 10 0 0 0-5.5-8.5" transform="scale(0.8) translate(2,2)"/>
         <path d="M5.5 16.5A8 8 0 0 1 2 10h3L1 6l-4 4h3a10 10 0 0 0 5.5 8.5" transform="scale(0.8) translate(4,2)"/>
       </svg>
-      Sync from Brewfather
+      <span class="btn-label">Sync from Brewfather</span>
     `;
     syncBtn.classList.remove("syncing");
   }, 2000);
