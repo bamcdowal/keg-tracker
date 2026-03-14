@@ -75,9 +75,13 @@ def _parse_date(ms) -> str:
         return str(ms)
 
 
-def sync_batches_to_db(db: Session, raw_batches: list[dict]) -> int:
-    """Upsert Brewfather batches into the local database. Returns count synced."""
+def sync_batches_to_db(db: Session, raw_batches: list[dict]) -> dict:
+    """Upsert Brewfather batches into the local database.
+
+    Returns dict with 'synced' count and 'failed' list of error descriptions.
+    """
     count = 0
+    failed: list[str] = []
     for b in raw_batches:
         batch_id = b.get("_id", "")
         if not batch_id:
@@ -110,7 +114,9 @@ def sync_batches_to_db(db: Session, raw_batches: list[dict]) -> int:
                     db.add(Batch(id=batch_id, **values))
             count += 1
         except Exception as e:
-            print(f"[SYNC] Warning: skipped batch {batch_id!r}: {e}")
+            msg = f"Batch {batch_id!r}: {e}"
+            print(f"[SYNC] Warning: skipped {msg}")
+            failed.append(msg)
 
     db.commit()
-    return count
+    return {"synced": count, "failed": failed}

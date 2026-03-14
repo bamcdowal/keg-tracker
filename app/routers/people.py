@@ -27,6 +27,8 @@ def create_person(data: PersonCreate, db: Session = Depends(get_db)):
     name = data.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Name cannot be empty")
+    if len(name) > 100:
+        raise HTTPException(status_code=400, detail="Name is too long (max 100 characters)")
     existing = db.query(Person).filter(Person.name == name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Person already exists")
@@ -63,6 +65,8 @@ def create_location(data: LocationCreate, db: Session = Depends(get_db)):
     name = data.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Name cannot be empty")
+    if len(name) > 100:
+        raise HTTPException(status_code=400, detail="Name is too long (max 100 characters)")
     existing = db.query(Location).filter(Location.name == name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Location already exists")

@@ -50,7 +50,7 @@ def health():
 def get_version():
     try:
         version = _VERSION_FILE.read_text().strip()
-    except FileNotFoundError:
+    except Exception:
         version = "unknown"
     return {"version": version}
 
