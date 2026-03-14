@@ -33,7 +33,7 @@ let kegs = [];
 let batches = [];
 let people = [];
 let locations = [];
-let currentView = "grid";
+let currentView = "board";
 let brewerySettings = { name: "Blue Dog Brewing", logo_url: "/logo.png" };
 let statsCache = { data: null, timestamp: 0 };
 
